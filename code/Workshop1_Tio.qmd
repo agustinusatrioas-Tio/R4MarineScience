@@ -5,6 +5,10 @@ format: html
 editor: visual
 ---
 
+##Introduction
+
+This workshop provides an introduction to data manipulation and analysis in R using the tidyverse suite of packages. The focus is on importing data from various file formats, inspecting dataset structure, selecting relevant variables, filtering observations, sorting data, creating new variables, summarising data by groups, and visualising patterns in ecological datasets. The Palmer Penguins dataset is used as an example to demonstrate these concepts and techniques.
+
 ## Session Memory Housekeeping
 
 ## Inventory every active object currently residing in session RAM
@@ -121,7 +125,7 @@ print(benthic_cover)
 Before conducting any analysis, it is important to inspect the structure of a newly imported dataset. This step helps identify the available variables, their data types, dataset dimensions, and any potential issues that may require cleaning prior to analysis. \# Exploring the Palmer Penguins Dataset The Palmer Penguins dataset was loaded as an example ecological dataset for practicing data wrangling and exploratory analysis. Before performing any analysis, the structure of the dataset was inspected to identify the available variables, data types, and overall dataset dimensions. \# Install the data package (execute this command once in your console pane and then delete!)
 
 ```{r}
-install.packages("palmerpenguins")
+#install.packages("palmerpenguins")
 ```
 
 # Load the package data into active memory
@@ -131,11 +135,11 @@ library(palmerpenguins)
 data("penguins")
 ```
 
-# Examine the structure of the dataset - always do this when loading a new dataset!
+Examine the structure of the dataset - always do this when loading a new dataset!
 
-# glimpse() is a tidyverse function that provides a concise overview of the dataset, showing variable names, data types, and a preview of the data.
+glimpse() is a tidyverse function that provides a concise overview of the dataset, showing variable names, data types, and a preview of the data.
 
-# str() is a base R function that gives a more detailed structure of the dataset, including the number of observations and variables, as well as the data types of each variable. Both functions are useful for understanding the dataset before performing any analysis or cleaning steps.
+str() is a base R function that gives a more detailed structure of the dataset, including the number of observations and variables, as well as the data types of each variable. Both functions are useful for understanding the dataset before performing any analysis or cleaning steps.
 
 ```{r}
 glimpse(penguins) # tidyverse version (from dplyr package)
@@ -455,7 +459,13 @@ if (!dir.exists("Rdata"))
 #Save the table as a CSV file 1. Exporting our collapsed summary table as a universal flat text file
 
 ```{r}
-write_csv(biological_signal, "outputs/penguin_species_mass_summary.csv")
+write_csv(
+  biological_signal,
+  here::here(
+    "outputs",
+    "penguin_species_mass_summary.csv"
+  )
+)
 ```
 
 2.  Saving our cleaned morphological cohort table as a native R binary file
@@ -477,13 +487,17 @@ write_csv(biological_signal, "outputs/penguin_species_mass_summary.csv")
       ) %>%
       drop_na()
 
+
     ```
 
 ```{r}
 # Saving our cleaned penguin morphology cohort as a native R binary file
 saveRDS(
   clean_cohort,
-  "outputs/clean_penguin_morphology_cohort.rds"
+  here::here(
+    "outputs",
+    "clean_penguin_morphology_cohort.rds"
+  )
 )
 ```
 
@@ -493,7 +507,10 @@ The final visualisation was exported as a high-resolution PNG image using \`ggsa
 
 ```{r}
 ggsave(
-  "outputs/mass_compare_plot.png",
+  filename = here::here(
+    "outputs",
+    "mass_compare_plot.png"
+  ),
   plot = mass_compare_plot,
   width = 120,
   height = 120,
