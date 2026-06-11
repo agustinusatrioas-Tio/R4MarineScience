@@ -1,0 +1,78 @@
+  ---
+title: "R4MS Workshop 2 - Final Exercise"
+author: "Ben Cresswell"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+ html_document:
+    code_folding: show
+    collapse: no
+    df_print: paged
+    fig_caption: yes
+    fig_height: 6
+    fig_width: 10
+    highlight: textmate
+    theme: spacelab
+    toc: yes
+    toc_float: yes
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+# Set options, housekeeping
+knitr::opts_chunk$set(
+	echo = FALSE,
+	include = TRUE,
+	message = FALSE,
+	warning = FALSE)
+```
+
+# Introduction
+
+Here we are going to wrangling in messy data on the Ross River estuary fish surveys and produce final clean tables and figure.
+We have 4 separate files to wrangle in and use
+
+# Housekeeping
+
+```{r housekeeping}
+#| message: true
+#| warning: false
+rm(list = ls())
+```
+
+# Packages
+
+```{r}
+library(tidyverse) # Inc dplyr, ggplot2, lubridate etc
+library(readxl) # For reading in excel files
+```
+
+# Load files
+
+# Main dataset
+The catch data is split across 4 tabs in one excel file
+Load indivudally
+```{r}
+catch1 <- read_excel(here::here("data/workshop2/estuary_catch_log.xlsx"), sheet = "C")
+catch2 <- read_excel("../data/workshop2/estuary_catch_log.xlsx", sheet = 2)
+catch3 <- read_excel("../data/workshop2/estuary_catch_log.xlsx", sheet = 3)
+catch4 <- read_excel("../data/workshop2/estuary_catch_log.xlsx", sheet = 4)
+
+catch_data <- bind_rows(catch1, catch2, catch3, catch4)
+```
+
+# Alternative method for loading files
+```{r}
+file_path <- "../data/workshop2/estuary_catch_log.xlsx"
+catch_data2 <- excel_sheets(file_path) |>
+  map_dfr(~read_excel(path = file_path, sheet = .x))
+```
+
+```{r}
+catch_data
+head(catch_data)
+glimpse(catch_data)
+str(catch_data)
+```
+
+
