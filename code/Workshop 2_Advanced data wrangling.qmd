@@ -1,6 +1,6 @@
 ---
 title: "Workshop 2 - Advanced data wrangling"
-author: "Tio"
+author: "Agustinus Satrio Supoyo"
 format: html
 editor: visual
 ---
@@ -38,11 +38,8 @@ ggplot(table1, aes(x = year, y = cases)) +
 ```
 
 pivot the data to a tidy format using two functions: pivot_longer() and pivot_wider() pivot_longer() is used to transform data from a wide format to a long format, pivot_wider() is used to transform data from a long format to a wide format.
-
-```{r}
 tidyr:pivot_longer()
 tidyr:pivot_wider()
-```
 
 ```{r}
 billboard |>
