@@ -1,14 +1,10 @@
 ---
-  `---
 title: "R4MS Workshop 2 - Final Exercise"
-author: "Tio"
+author: "Agustinus Satrio Supoyo"
 format: html
 editor: visual
 ---
 
-html_document: code_folding: show collapse: no df_print: paged fig_caption: yes fig_height: 6 fig_width: 10 highlight: textmate theme: spacelab toc: yes toc_float: yes editor_options: chunk_output_type: inline ---
-
-```{r}
 ---
 html_document:
     code_folding: show
@@ -24,13 +20,14 @@ html_document:
 editor_options: 
   chunk_output_type: inline
 ---
-```
 
 # Introduction
 
 Here we are going to wrangle in messy data on the Ross River estuary fish surveys and produce final clean tables and figure. We have 4 separate files that were provided to us by a former PhD student. We know we have data for 4 sites, 4 species, and 30 days of sampling. We also have metadata on the sites and sensor data on the environmental conditions at each site.
 
 # Housekeeping
+
+This function removes all objects from the current R environment, effectively clearing it. This is often done at the beginning of a script to ensure that there are no leftover variables or data from previous analyses that could interfere with the current analysis. By starting with a clean environment, we can avoid potential conflicts and ensure that our code runs smoothly without unexpected errors due to existing objects.
 
 ```{r housekeeping}
 #| message: true
@@ -39,6 +36,8 @@ rm(list = ls())
 ```
 
 # Packages
+
+This section loads the necessary R packages for data manipulation, visualization, and reading Excel files. The tidyverse package is a collection of R packages designed for data science, including dplyr for data manipulation, ggplot2 for data visualization, and lubridate for working with dates. The readxl package is specifically used for reading Excel files into R.
 
 ```{r packages}
 library(tidyverse) # Inc dplyr, ggplot2, lubridate etc
@@ -49,7 +48,7 @@ library(readxl) # For reading in excel files
 
 # Main dataset
 
-The catch data is split across 4 tabs in one excel file Load indivudally
+The catch data is stored across four separate tabs in one Excel file. Each tab contains part of the fish survey catch log, including information about the sampling site, survey date, species caught, and catch count. Before analysis, each tab needs to be loaded separately and then combined into one main dataset.
 
 ```{r load-catch-1}
 catch1 <- read_excel(here::here("data/workshop2/estuary_catch_log.xlsx"), sheet = 1)
@@ -62,6 +61,8 @@ catch4 <- read_excel(here::here("data/workshop2/estuary_catch_log.xlsx"), sheet 
 
 Here we are looking for anomalies between workbooks and any variable naming issues
 
+The catch log was stored across four separate Excel worksheets. Before combining the datasets, each sheet was inspected to identify inconsistencies in variable names, data structure, and formatting. This step ensures that all worksheets contain compatible columns and reduces the risk of introducing errors during the row-binding process.
+
 ```{r inspect-catch-tabs}
 catch1
 catch2
@@ -69,7 +70,7 @@ catch3
 catch4
 ```
 
-We definitely have var naming issues, but they look to be the same. Will check again once we have combined together \# Bind rows together
+We definitely have var naming issues, but they look to be the same. Will check again once we have combined together \# Bind rows together The initial inspection indicated that the worksheets contained the same core variables and a consistent overall structure, making them suitable for merging. However, inconsistencies were observed in site and species naming conventions, which will require further standardisation after the datasets are combined into a single table.
 
 ```{r bind-catch}
 catch_data <- bind_rows(catch1, catch2, catch3, catch4)
@@ -77,7 +78,13 @@ catch_data <- bind_rows(catch1, catch2, catch3, catch4)
 rm(catch1, catch2, catch3, catch4) # Clean up the environment
 ```
 
+The four worksheets were combined into a single dataset using bind_rows(). This approach preserves all observations while stacking records from each sampling site into one master catch table for subsequent cleaning and analysis.
+
 # Preliminary checks
+
+The preliminary inspection confirmed that the combined catch dataset contained 427 observations and four variables (site, date, species, and count). The date column was successfully imported as a POSIXct date-time object, while site and species were stored as character variables and count as a numeric variable.
+
+Several inconsistencies were identified in the text fields. For example, species names were recorded using different naming conventions (e.g., "MANGROVE JACK" versus "barramundi"), and site names contained a mixture of uppercase and lowercase formatting. These inconsistencies would prevent reliable joins with the metadata and species dictionary tables and therefore require standardisation prior to further analysis.
 
 ```{r inspect-catch}
 catch_data
@@ -123,6 +130,8 @@ Site names are all over the place in the metadata too - will need to standardise
 
 ### Fix site names in data and metadata and convert character to factor variables
 
+this will make it easier to join the two datasets together and also for plotting later on. We'll also convert all character variables to factors, which is a common practice in R for categorical data. This conversion can improve performance in certain operations and is often necessary for statistical modeling and plotting.
+
 ```{r fix-site-names}
 catch_data <- catch_data |>
   mutate(
@@ -142,6 +151,8 @@ metadata <- metadata |>
 ```
 
 # Recheck
+
+Recheck the site names in both datasets to ensure they have been standardised correctly. This step is crucial for ensuring that the subsequent join operation between the catch data and metadata will work as intended, without mismatches due to inconsistent naming.
 
 ```{r recheck-site-names}
 catch_data |> 
@@ -163,8 +174,6 @@ head(species_dict)
 ```
 
 We'll need to check the common names in the catch log match those in the taxonomic dictionary before we do the join.
-
-
 
 ```{r}
 library(readr)
@@ -219,11 +228,13 @@ We know we need to add the metadata in, but we also have this dataset with sonde
 ```
 
 #### Notes on sensor data
-- We had 15-minute sonde data for the same 4 sites and 30 days of sampling. The script sourced above turned into daily data and removed outliers
-- There are three different environmental vars measured: temperature, salinity, and turbidity.
-- Could investigate effects of all three on fish spp abundance or pick one? Need to think about prior research and hypotheses etc.
+
+-   We had 15-minute sonde data for the same 4 sites and 30 days of sampling. The script sourced above turned into daily data and removed outliers
+-   There are three different environmental vars measured: temperature, salinity, and turbidity.
+-   Could investigate effects of all three on fish spp abundance or pick one? Need to think about prior research and hypotheses etc.
 
 ### OK, now we can join catch data with metadata and sensor data
+
 ```{r join-all}
 catch_data_final <- catch_data |>
   left_join(metadata, by = join_by(site == site_name)) |>
@@ -231,16 +242,16 @@ catch_data_final <- catch_data |>
 ```
 
 # Check
+
 ```{r check-final-join}
 glimpse(catch_data_final)
 ```
+
 OK starting to look good now!
 
 But we only have 427 rows of data - doesn't seem right.. How many should we have?
 
-4 x spp
-4 x sites
-30 surveys
+4 x spp 4 x sites 30 surveys
 
 4*4*30
 
@@ -272,6 +283,7 @@ catch_data_final |>
 ### First we probably want to first check that there is an actual difference in env vars among zones
 
 #### Salinity
+
 ```{r}
 # Let's make a table
 sal_sum <- 
@@ -295,12 +307,12 @@ sal_sum |>
        y = "Median Salinity (ppt)")
 ```
 
-
 Definitely differences in salinity, as we'd expect!! And we know there has been work on some of these species about responses to salinity gradients.
 
 Let's check the other two env vars too, just to be sure.
 
 ### Turbidity
+
 ```{r}
 turb_sum <- 
   catch_data_final |>
@@ -321,8 +333,8 @@ turb_sum |>
        y = "Median Turbidity (NTU)")
 ```
 
-
 ### And temperature
+
 ```{r}
 temp_sum <- 
   catch_data_final |>
@@ -344,11 +356,10 @@ temp_sum |>
 
 ```
 
-
 OK so we'll continue with salinity as our main env var of interest, but we know that there are also differences in turbidity and temperature across the zones, which could also be influencing fish abundance patterns. We can discuss this in the interpretation of our results and consider potential confounding effects of these other environmental variables in our discussion.
 
-
 #### Remake salinity plot nicely for publication
+
 ```{r}
 #| fig-cap: "Salinity Gradient across zones. Ross River Estuary System, Townsville, NQ, Australia May 2026."
 
@@ -365,8 +376,8 @@ sal_sum |>
 
 # Now we can turn to patterns in fish abundance
 
+# Calculate summary stats
 
-# Calculate summary stats 
 ```{r}
 fish_stats <- catch_data_final |>
   group_by(zone, scientific_name) |>
@@ -376,7 +387,6 @@ fish_stats <- catch_data_final |>
     .groups = "drop"
   )
 ```
-
 
 # And plot
 
