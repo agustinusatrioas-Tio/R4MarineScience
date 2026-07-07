@@ -6,17 +6,20 @@ editor: visual
 ---
 
 ---
-html_document:
-    code_folding: show
-    collapse: no
-    df_print: paged
-    fig_caption: yes
-    fig_height: 6
-    fig_width: 10
-    highlight: textmate
+title: "R4MS Workshop 2 - Final Exercise"
+author: "Agustinus Satrio Supoyo"
+format:
+  html:
+    code-fold: show
+    df-print: paged
+    fig-cap: true
+    fig-height: 6
+    fig-width: 10
+    highlight-style: textmate
     theme: spacelab
-    toc: yes
-    toc_float: yes
+    toc: true
+    toc-location: left
+    embed-resources: true
 editor_options: 
   chunk_output_type: inline
 ---
