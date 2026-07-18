@@ -1,0 +1,403 @@
+---
+title: "R4MS Workshop 2 - Final Exercise"
+author: "Agustinus Satrio Supoyo"
+output: html_document
+---
+
+## Introduction
+
+Here we are going to wrangle in messy data on the Ross River estuary fish surveys and produce final clean tables and figure. We have 4 separate files that were provided to us by a former PhD student. We know we have data for 4 sites, 4 species, and 30 days of sampling. We also have metadata on the sites and sensor data on the environmental conditions at each site.
+
+### Data preparation
+
+### Housekeeping
+
+This function removes all objects from the current R environment, effectively clearing it. This is often done at the beginning of a script to ensure that there are no leftover variables or data from previous analyses that could interfere with the current analysis. By starting with a clean environment, we can avoid potential conflicts and ensure that our code runs smoothly without unexpected errors due to existing objects.
+
+```{r housekeeping}
+#| message: true
+#| warning: false
+rm(list = ls())
+```
+
+### Load packages
+
+This section loads the necessary R packages for data manipulation, visualization, and reading Excel files. The tidyverse package is a collection of R packages designed for data science, including dplyr for data manipulation, ggplot2 for data visualization, and lubridate for working with dates. The readxl package is specifically used for reading Excel files into R.
+
+```{r setup, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(readxl)
+
+```
+
+### Load catch data
+
+The catch data is stored across four separate tabs in one Excel file. Each tab contains part of the fish survey catch log, including information about the sampling site, survey date, species caught, and catch count. Before analysis, each tab needs to be loaded separately and then combined into one main dataset.
+
+```{r load-catch-1}
+catch1 <- read_excel(here::here("data/workshop2/estuary_catch_log.xlsx"), sheet = 1)
+catch2 <- read_excel(here::here("data/workshop2/estuary_catch_log.xlsx"), sheet = 2)
+catch3 <- read_excel(here::here("data/workshop2/estuary_catch_log.xlsx"), sheet = 3)
+catch4 <- read_excel(here::here("data/workshop2/estuary_catch_log.xlsx"), sheet = 4)
+```
+
+### Inspect individual tabs
+
+Here we are looking for anomalies between workbooks and any variable naming issues
+
+The catch log was stored across four separate Excel worksheets. Before combining the datasets, each sheet was inspected to identify inconsistencies in variable names, data structure, and formatting. This step ensures that all worksheets contain compatible columns and reduces the risk of introducing errors during the row-binding process.
+
+```{r inspect-catch-tabs}
+catch1
+catch2
+catch3
+catch4
+```
+
+We definitely have var naming issues, but they look to be the same. Will check again once we have combined together \# Bind rows together The initial inspection indicated that the worksheets contained the same core variables and a consistent overall structure, making them suitable for merging. However, inconsistencies were observed in site and species naming conventions, which will require further standardisation after the datasets are combined into a single table.
+
+```{r bind-catch}
+catch_data <- bind_rows(catch1, catch2, catch3, catch4)
+# Clean up the environment
+rm(catch1, catch2, catch3, catch4) # Clean up the environment
+```
+
+The four worksheets were combined into a single dataset using bind_rows(). This approach preserves all observations while stacking records from each sampling site into one master catch table for subsequent cleaning and analysis.
+
+## Preliminary checks
+
+The preliminary inspection confirmed that the combined catch dataset contained 427 observations and four variables (site, date, species, and count). The date column was successfully imported as a POSIXct date-time object, while site and species were stored as character variables and count as a numeric variable.
+
+Several inconsistencies were identified in the text fields. For example, species names were recorded using different naming conventions (e.g., "MANGROVE JACK" versus "barramundi"), and site names contained a mixture of uppercase and lowercase formatting. These inconsistencies would prevent reliable joins with the metadata and species dictionary tables and therefore require standardisation prior to further analysis.
+
+```{r inspect-catch}
+catch_data
+head(catch_data)
+glimpse(catch_data)
+str(catch_data)
+```
+
+These functions provide different information about the dataset: - `catch_data` prints the complete dataset. - `head()` displays the first six observations. - `glimpse()` provides a compact summary of the variables and their data types. - `str()` displays the internal structure of the dataset.
+
+However, these outputs do not clearly show all unique site and species values. Use `distinct()` to inspect these values explicitly before converting the variables into factors.
+
+### Inspect Distinct Site Names
+
+```{r distinct-catch}
+catch_data |> 
+  distinct(site)
+```
+
+### Inspect Distinct Species Names
+
+```{r distinct-species}
+catch_data |> 
+  distinct(species)
+```
+
+The dataset contains four sites and four species. The sites appear to represent different zones within the Ross River estuary, although this must be confirmed against the site metadata table. The preliminary inspection also reveals inconsistencies in the formatting of site and species names. These variables must be cleaned and standardised before joining the catch data with the site metadata and taxonomic dictionary.
+
+### Next Steps for the Catch Data
+
+The preliminary inspection identified inconsistencies in the `site` and `species` variables. The next steps are: - Standardise the site names and arrange them in a logical order. - Compare the site names with the metadata table to ensure that the naming conventions are consistent. - Standardise the common species names. - Use the taxonomic dictionary to match the cleaned common names with their corresponding scientific names. Before cleaning the catch dataset, load and inspect the metadata table to determine the expected site names and site order.
+
+### Load site metadata
+
+```{r load-metadata}
+metadata <- read_csv(here::here("data/workshop2/estuary_metadata.csv"))
+```
+
+Checks
+
+```{r inspect-metadata}
+head(metadata)
+glimpse(metadata)
+```
+
+Site names are all over the place in the metadata too - will need to standardise in both of these tbls before we can combine them
+
+### Fix site names in data and metadata and convert character to factor variables
+
+The site names in both the catch dataset and the metadata table must be standardised before the datasets can be joined. Consistent site names ensure that matching records are recognised correctly during the join. Arranging the sites in a logical order will also make tables and plots easier to interpret. After cleaning the text values, relevant character variables can be converted to factors. Factors are useful for categorical data because they store a defined set of levels and allow the order of categories to be controlled during analysis and visualisation.
+
+```{r fix-site-names}
+catch_data <- catch_data |>
+  mutate(
+    site = str_to_lower(str_trim(site)),
+    site = str_replace_all(site, " ", "_")) |> 
+  # Convert all chr to fct
+  mutate(across(where(is.character), as_factor)
+  )
+
+metadata <- metadata |>
+  mutate(
+    site_name = str_to_lower(str_trim(site_name)),
+    site_name = str_replace_all(site_name, " ", "_")) |> 
+  # Convert all chr to fct
+  mutate(across(where(is.character), as_factor)
+  )
+```
+
+### Recheck
+
+Recheck the site names in both datasets to ensure they have been standardised correctly. This step is crucial for ensuring that the subsequent join operation between the catch data and metadata will work as intended, without mismatches due to inconsistent naming.
+
+```{r recheck-site-names}
+catch_data |> 
+  str()
+# catch_data |> 
+#   distinct(site)
+str(metadata)
+
+```
+
+The next step is to standardise the species names and use the taxonomic dictionary to add the corresponding scientific names.
+
+### Load Taxonomic Dictionary
+
+```{r load-species-dict}
+species_dict <- read_csv(here::here("data/workshop2/estuary_metadata.csv"))
+# Check
+head(species_dict)
+```
+
+We'll need to check the common names in the catch log match those in the taxonomic dictionary before we do the join.
+
+```{r, message=FALSE, warning=FALSE}
+library(readr)
+species_dict <- read_csv(
+  here::here("data/workshop2/species_dictionary.csv")
+)
+
+```
+
+```{r check-species-names}
+catch_data |> 
+  distinct(species)
+# Can see these are different to the dictionary
+species_dict |>
+  distinct(common_name)
+```
+
+### Standardise species (common name) variable in the catch log to match dictionary
+
+```{r fix-species-names}
+catch_data <- catch_data |>
+  mutate(
+    species = str_to_lower(str_trim(species)),
+    species = str_replace_all(species, " ", "_")
+  )
+```
+
+### Add Scientific Names Using the Taxonomic Dictionary
+
+Create a new variable named `common_name` from the cleaned `species` column, then join the catch data with the taxonomic dictionary. The join adds the corresponding `scientific_name` to each observation.
+
+```{r join-species-dict}
+catch_data <- catch_data |>
+  mutate(common_name = species) |>
+  left_join(species_dict, by = join_by(common_name))
+```
+
+### Recheck the Catch Dataset
+
+It should have species and site names fixed
+
+```{r}
+glimpse(catch_data)
+```
+
+The catch dataset is now ready for the next stage of data integration. The site metadata still needs to be joined to the catch records. In addition, the sonde dataset contains environmental sensor measurements that can be incorporated into the analysis.
+
+### Load the sonde data
+
+The sensor data processing code is stored in a separate script and is sourced here.
+
+```{r load-sonde}
+  source(here::here("code/diw_sensor.R"))
+```
+
+The sensor dataset contains 15-minute observations for the same four sites and 30 days of sampling. These data were summarised into daily environmental values and outliers were removed.
+
+#### Join catch, metadata, and sensor data
+
+```{r join-all}
+catch_data_final <- catch_data |>
+  left_join(metadata, by = join_by(site == site_name)) |>
+  left_join(sensor_daily, by = join_by(site, date))
+```
+
+Check
+
+```{r check-final-join}
+glimpse(catch_data_final)
+```
+
+The joined dataset has 427 rows, but a complete dataset should have 480 rows because there are four species, four sites, and 30 survey days.
+
+```{r expected-rows}
+4 * 4 * 30
+```
+
+There are some days where there were zero counts of certain species at different sites. We'll need to wrangle these into a complete dataset with 480 rows, where the zero counts are explicitly represented as 0 rather than NA. This is important for our subsequent analyses and visualisations, as we want to be able to distinguish between true absences (0) and missing data (NA).
+
+### Wrangle final dataset
+
+```{r wrangle-final-zeros}
+catch_data_final <- 
+catch_data_final |> 
+  complete(
+    nesting(site, date, 
+           # lat, lon, 
+            zone, mean_temp, mean_salinity, mean_turbidity),
+    scientific_name
+  ) |>
+  mutate(
+    # Convert the resulting NA counts to 0
+    count = coalesce(count, 0)
+  )
+```
+
+# Environmental Patterns
+
+The main data-wrangling process is now complete. We can begin exploring ecological hypotheses and examining how environmental conditions vary across the estuarine zones. Before investigating relationships between fish abundance and environmental variables, it is useful to confirm whether salinity, turbidity, and temperature differ among zones.
+
+## Salinity
+
+```{r}
+# Let's make a table
+sal_sum <- 
+  catch_data_final |>
+  group_by(zone) |>
+  summarise(
+   # sem_salinity = sd(mean_salinity) / sqrt(n()),
+    sd_salinity = sd(mean_salinity, na.rm = TRUE),
+    median_salinity = median(mean_salinity, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# And from this a plot
+sal_sum |> 
+  ggplot(aes(x = zone, y = median_salinity)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = median_salinity - sd_salinity, ymax = median_salinity + sd_salinity), width = 0.2) +
+  theme_minimal() +
+  labs(#title = "Median Salinity by Zone with Standard Deviation Error Bars",
+       x = "Zone",
+       y = "Median Salinity (ppt)")
+```
+
+The results indicate clear differences in salinity among the estuarine zones. This pattern is expected because salinity generally changes along an estuarine gradient depending on freshwater and marine influence. Previous research has also demonstrated that fish species can differ in their responses and tolerances to salinity gradients. Salinity may therefore be an important environmental variable influencing fish abundance and distribution in this ecosystem.
+
+## Turbidity
+
+```{r}
+turb_sum <- 
+  catch_data_final |>
+  group_by(zone) |>
+  summarise(
+    sd_turbidity = sd(mean_turbidity, na.rm = TRUE),
+    median_turbidity = median(mean_turbidity, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+turb_sum |>
+  ggplot(aes(x = zone, y = median_turbidity)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = median_turbidity - sd_turbidity, ymax = median_turbidity + sd_turbidity), width = 0.2) +
+  theme_minimal() +
+  labs(#title = "Median Turbidity by Zone with Standard Deviation Error Bars",
+       x = "Zone",
+       y = "Median Turbidity (NTU)")
+```
+
+## Temperature
+
+```{r}
+temp_sum <- 
+  catch_data_final |>
+  group_by(zone) |>
+  summarise(
+    sd_temperature = sd(mean_temp, na.rm = TRUE),
+    median_temperature = median(mean_temp, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+temp_sum |>
+  ggplot(aes(x = zone, y = median_temperature)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = median_temperature - sd_temperature, ymax = median_temperature + sd_temperature), width = 0.2) +
+  theme_minimal() +
+  labs(#title = "Median Temperature by Zone with Standard Deviation Error Bars",
+       x = "Zone",
+       y = "Median Temperature (°C)")
+
+```
+
+Salinity will be used as the primary environmental variable in the following analysis because it shows a clear gradient across the estuarine zones and is ecologically relevant to fish distribution.
+
+However, turbidity and temperature also differ among zones and may influence fish abundance patterns. These variables should therefore be considered when interpreting the results, particularly as potential confounding factors that may contribute to the observed relationship between salinity and fish abundance.
+
+# Publication-ready salinity plot
+
+### Remake salinity plot for publication
+
+```{r}
+#| fig-cap: "Salinity Gradient across zones. Ross River Estuary System, Townsville, NQ, Australia May 2026."
+
+sal_sum |> 
+  ggplot(aes(x = zone, y = median_salinity)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = median_salinity - sd_salinity, ymax = median_salinity + sd_salinity), width = 0.2) +
+  theme_minimal() +
+  labs(#title = "Median Salinity by Zone with Standard Deviation Error Bars",
+       x = "Zone",
+       y = "Median Salinity (ppt)")
+  
+```
+
+### Summarising patterns in fish abundance
+
+```{r}
+fish_stats <- catch_data_final |>
+  group_by(zone, scientific_name) |>
+  summarise(
+    mean_catch = mean(count),
+    sem_catch = sd(count) / sqrt(n()),
+    .groups = "drop"
+  )
+```
+
+### Visualising fish abundance
+
+```{r}
+fish_stats |> 
+  ggplot(aes(x = zone, y = mean_catch, fill = zone)) +
+  geom_line(group = 1) +
+  # add in points from master data
+  geom_point(data = catch_data_final, aes(x = zone, y = count), 
+             position = position_jitter(width = 0.2), alpha = 0.2, size = 1, inherit.aes = FALSE) +
+  geom_point(position = "dodge", size = 4, pch = 23) +
+  
+  geom_errorbar(aes(ymin = mean_catch - sem_catch, ymax = mean_catch + sem_catch), 
+                position = position_dodge(0.9), width = 0.2) +
+  
+  facet_wrap(~ scientific_name, scales = "fixed") +
+  theme_minimal() +
+  theme(
+    strip.text = element_text(face = "italic", size = 10, colour = "grey20"),
+   # legend.position = "bottom"
+    legend.position = "none"
+  ) +
+  labs(
+    #title = "Predatory Fish Abundance across Estuarine Salinity Gradients",
+    #subtitle = "Ross River Estuary System, May 2026",
+    x = "Spatial Zone",
+    y = "Abundance (per day)",
+    fill = "Spatial Zone"
+  )
+```
+
+# Conclusion
+
+The data wrangling process produced a complete catch dataset with standardised site names, standardised species names, joined metadata, joined environmental sensor data, and explicit zero counts. Environmental summaries showed clear differences among zones, especially in salinity. These cleaned data can now be used to explore how fish abundance varies across the estuarine gradient.
