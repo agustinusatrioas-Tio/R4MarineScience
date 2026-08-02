@@ -1,5 +1,5 @@
 ---
-title: "Workshop 2 Workshop 2 - Advanced data wrangling"
+title: "Workshop 2 - Advanced data wrangling"
 author: "Agustinus Satrio Supoyo"
 output: html_document
 ---
