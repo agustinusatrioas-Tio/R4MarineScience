@@ -149,3 +149,9 @@ library(readxl)
 library(stringr)
 library(lubridate)
 library(here)
+
+## Author
+
+**Agustinus Satrio Supoyo**  
+Master of Marine Biology  
+James Cook University
