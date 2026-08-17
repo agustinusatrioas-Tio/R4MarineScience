@@ -38,9 +38,7 @@ Workshop 1 focused on establishing a reproducible R workflow and strengthening f
 
 The **Palmer Penguins** dataset was used to practise data wrangling and investigate morphological variation among penguin species and islands.
 
-### AI-Off Phase
 
-This workshop was completed without AI-assisted coding to strengthen my understanding of R syntax, data structures, debugging, and tidyverse logic before using AI-supported workflows.
 
 ---
 
@@ -68,9 +66,6 @@ Workshop 2 expanded the foundational skills from Workshop 1 by introducing more 
 - Integrating biological and environmental datasets
 - Transitioning from **AI-Off to AI-On**
 
-### AI-On Phase
-
-AI-assisted coding was introduced as a supporting tool for more complex workflows. AI-generated code was treated as something to inspect and validate rather than use without understanding.
 
 ---
 
@@ -135,18 +130,6 @@ The Keystone workflow includes:
 
 **Ecological Visualisation**
 
-### Main Tasks
-
-- Import multiple Excel sheets
-- Standardise site and species names
-- Parse environmental timestamps
-- Convert `-999` sensor errors into true missing values
-- Summarise high-frequency sensor measurements to daily observations
-- Join biological, environmental, spatial, and taxonomic datasets
-- Replace common species names with scientific names
-- Construct explicit zero-catch observations
-- Calculate ecological summary statistics
-- Visualise species abundance along the salinity gradient
 
 ### Final Outputs
 
